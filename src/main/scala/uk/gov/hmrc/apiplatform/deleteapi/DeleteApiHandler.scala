@@ -1,36 +1,34 @@
 package uk.gov.hmrc.apiplatform.deleteapi
 
-import java.net.HttpURLConnection.HTTP_OK
-
-import com.amazonaws.services.lambda.runtime.events.{APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent}
+import com.amazonaws.services.lambda.runtime.Context
+import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient
 import software.amazon.awssdk.services.apigateway.model._
 import uk.gov.hmrc.api_platform_manage_api.AwsApiGatewayClient.awsApiGatewayClient
-import uk.gov.hmrc.api_platform_manage_api.ErrorRecovery.recovery
-import uk.gov.hmrc.aws_gateway_proxied_request_lambda.ProxiedRequestHandler
+import uk.gov.hmrc.api_platform_manage_api.AwsIdRetriever
+import uk.gov.hmrc.aws_gateway_proxied_request_lambda.{JsonMapper, SqsHandler}
 
 import scala.language.postfixOps
-import scala.util.Try
 
-class DeleteApiHandler(apiGatewayClient: ApiGatewayClient) extends ProxiedRequestHandler {
+class DeleteApiHandler(override val apiGatewayClient: ApiGatewayClient) extends SqsHandler with AwsIdRetriever with JsonMapper {
 
   def this() {
     this(awsApiGatewayClient)
   }
 
-  override def handleInput(input: APIGatewayProxyRequestEvent): APIGatewayProxyResponseEvent = {
-    Try(deleteApi(input)) recover recovery get
-  }
+  override def handleInput(event: SQSEvent, context: Context): Unit = {
+    val logger = context.getLogger
 
-  def deleteApi(requestEvent: APIGatewayProxyRequestEvent): APIGatewayProxyResponseEvent = {
-    val apiId = requestEvent.getPathParameters.get("api_id")
-    val deleteApiRequest = DeleteRestApiRequest.builder().restApiId(apiId).build()
-    apiGatewayClient.deleteRestApi(deleteApiRequest)
+    if (event.getRecords.size != 1) {
+      throw new IllegalArgumentException(s"Invalid number of records: ${event.getRecords.size}")
+    }
 
-    new APIGatewayProxyResponseEvent()
-      .withStatusCode(HTTP_OK)
-      .withBody(toJson(DeleteApiResponse(apiId)))
+    val api = fromJson[Api](event.getRecords.get(0).getBody)
+    getAwsIdByApiName(api.apiName) match {
+      case Some(awsId) => apiGatewayClient.deleteRestApi(DeleteRestApiRequest.builder().restApiId(awsId).build())
+      case None => logger.log(s"API with name ${api.apiName} not found")
+    }
   }
 }
 
-case class DeleteApiResponse(restApiId: String)
+case class Api(apiName: String)

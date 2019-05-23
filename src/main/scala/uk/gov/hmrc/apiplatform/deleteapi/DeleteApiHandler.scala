@@ -24,7 +24,7 @@ class DeleteApiHandler(override val apiGatewayClient: ApiGatewayClient) extends 
     }
 
     val api = fromJson[Api](event.getRecords.get(0).getBody)
-    getAwsIdByApiName(api.apiName) match {
+    getAwsRestApiIdByApiName(api.apiName) match {
       case Some(awsId) => apiGatewayClient.deleteRestApi(DeleteRestApiRequest.builder().restApiId(awsId).build())
       case None => logger.log(s"API with name ${api.apiName} not found")
     }

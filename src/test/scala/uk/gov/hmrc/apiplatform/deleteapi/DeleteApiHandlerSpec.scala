@@ -8,15 +8,15 @@ import com.amazonaws.services.lambda.runtime.{Context, LambdaLogger}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
-import org.scalatest._
-import org.scalatest.mockito.MockitoSugar
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient
 import software.amazon.awssdk.services.apigateway.model._
-import uk.gov.hmrc.aws_gateway_proxied_request_lambda.JsonMapper
+import scala.jdk.CollectionConverters._
+import uk.gov.hmrc.api_platform_manage_api.utils.JsonMapper
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 
-import scala.collection.JavaConversions.seqAsJavaList
-
-class DeleteApiHandlerSpec extends WordSpecLike with Matchers with MockitoSugar with JsonMapper {
+class DeleteApiHandlerSpec extends AnyWordSpec with Matchers with MockitoSugar with JsonMapper {
 
   trait Setup {
     val apiId: String = UUID.randomUUID().toString
@@ -26,7 +26,7 @@ class DeleteApiHandlerSpec extends WordSpecLike with Matchers with MockitoSugar 
     val message = new SQSMessage()
     message.setBody(requestBody)
     val sqsEvent = new SQSEvent()
-    sqsEvent.setRecords(List(message))
+    sqsEvent.setRecords(List(message).asJava)
 
     val mockAPIGatewayClient: ApiGatewayClient = mock[ApiGatewayClient]
     val deleteApiHandler = new DeleteApiHandler(mockAPIGatewayClient)
@@ -54,7 +54,7 @@ class DeleteApiHandlerSpec extends WordSpecLike with Matchers with MockitoSugar 
     }
 
     "throw an Exception if multiple messages have been retrieved from SQS" in new Setup {
-      sqsEvent.setRecords(List(message, message))
+      sqsEvent.setRecords(List(message, message).asJava)
 
       val exception = intercept[IllegalArgumentException](deleteApiHandler.handleInput(sqsEvent, mockContext))
 
@@ -62,7 +62,7 @@ class DeleteApiHandlerSpec extends WordSpecLike with Matchers with MockitoSugar 
     }
 
     "throw an Exception if no messages have been retrieved from SQS" in new Setup {
-      sqsEvent.setRecords(List())
+      sqsEvent.setRecords(List().asJava)
 
       val exception = intercept[IllegalArgumentException](deleteApiHandler.handleInput(sqsEvent, mockContext))
 
@@ -91,7 +91,7 @@ class DeleteApiHandlerSpec extends WordSpecLike with Matchers with MockitoSugar 
     val items: Seq[RestApi] = (1 to count).map(c => RestApi.builder().id(s"$c").name(s"Item $c").build())
 
     GetRestApisResponse.builder()
-      .items(seqAsJavaList(items))
+      .items(items.asJava)
       .build()
   }
 }

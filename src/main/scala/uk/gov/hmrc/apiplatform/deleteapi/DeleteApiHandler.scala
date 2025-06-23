@@ -6,11 +6,11 @@ import software.amazon.awssdk.services.apigateway.ApiGatewayClient
 import software.amazon.awssdk.services.apigateway.model._
 import uk.gov.hmrc.api_platform_manage_api.AwsApiGatewayClient.awsApiGatewayClient
 import uk.gov.hmrc.api_platform_manage_api.AwsIdRetriever
-import uk.gov.hmrc.aws_gateway_proxied_request_lambda.{JsonMapper, SqsHandler}
+import uk.gov.hmrc.api_platform_manage_api.utils.SqsHandler
 
 import scala.language.postfixOps
 
-class DeleteApiHandler(override val apiGatewayClient: ApiGatewayClient) extends SqsHandler with AwsIdRetriever with JsonMapper {
+class DeleteApiHandler(override val apiGatewayClient: ApiGatewayClient) extends SqsHandler with AwsIdRetriever {
 
   def this() {
     this(awsApiGatewayClient)

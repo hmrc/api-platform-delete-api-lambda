@@ -37,11 +37,12 @@ class DeleteApiHandlerSpec extends AnyWordSpec with Matchers with MockitoSugar w
   "Delete API Handler" should {
     "delete the API definition from API Gateway when found" in new Setup {
       when(mockAPIGatewayClient.getRestApis(any[GetRestApisRequest])).thenReturn(buildMatchingRestApisResponse(apiId, apiName))
-      val deleteRequestCaptor: ArgumentCaptor[DeleteRestApiRequest] = ArgumentCaptor.forClass(classOf[DeleteRestApiRequest])
-      when(mockAPIGatewayClient.deleteRestApi(deleteRequestCaptor.capture())).thenReturn(DeleteRestApiResponse.builder().build())
+      when(mockAPIGatewayClient.deleteRestApi(any[DeleteRestApiRequest])).thenReturn(DeleteRestApiResponse.builder().build())
 
       deleteApiHandler.handleInput(sqsEvent, mockContext)
 
+      val deleteRequestCaptor: ArgumentCaptor[DeleteRestApiRequest] = ArgumentCaptor.forClass(classOf[DeleteRestApiRequest])
+      verify(mockAPIGatewayClient).deleteRestApi(deleteRequestCaptor.capture())
       deleteRequestCaptor.getValue.restApiId shouldEqual apiId
     }
 

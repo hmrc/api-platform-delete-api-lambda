@@ -1,7 +1,7 @@
 
 # api-platform-delete-api-lambda
 
-Delete an AWS API Gateway REST API
+Delete an AWS API Gateway REST API.
 
 ### License
 

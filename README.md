@@ -1,7 +1,7 @@
 
 # api-platform-delete-api-lambda
 
-This is a placeholder README.md for a new repository
+Delete an AWS API Gateway REST API
 
 ### License
 
